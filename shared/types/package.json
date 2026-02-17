@@ -1,0 +1,26 @@
+{
+  "name": "@kaimosi/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript type definitions",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    },
+    "./models/*": {
+      "types": "./dist/models/*.d.ts"
+    },
+    "./api/*": {
+      "types": "./dist/api/*.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "private": false
+}
