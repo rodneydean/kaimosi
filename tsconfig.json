@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@kaimosi/types": [
+        "./shared/types"
       ]
     }
   },

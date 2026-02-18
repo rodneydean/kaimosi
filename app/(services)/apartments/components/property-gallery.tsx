@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, ZoomIn, X } from 'lucide-react'
-import type { PropertyImage } from '@kaimosi/types'
+import { PropertyImage } from '@/shared/types'
 
 interface PropertyGalleryProps {
   images: PropertyImage[]

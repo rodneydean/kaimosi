@@ -21,7 +21,7 @@ export function useMap() {
   return React.useContext(MapContext)
 }
 
-interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
+interface MapProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onLoad'> {
   center?: [number, number]
   zoom?: number
   minZoom?: number

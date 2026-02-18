@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request parameters', details: error.errors },
+        { error: 'Invalid request parameters', details: error },
         { status: 400 }
       )
     }
@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
         podProductId: item.podProductId,
         podDesignId: item.podDesignId,
         quantity: item.quantity,
-        size: item.size,
-        color: item.color,
+        size: item.size || undefined,
+        color: item.color || undefined,
         customOptions: item.customOptions,
         price: Number(item.price),
       })),
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error },
         { status: 400 }
       )
     }

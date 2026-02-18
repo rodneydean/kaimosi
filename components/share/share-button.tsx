@@ -66,7 +66,7 @@ export function ShareButton({ type, slug, title, description, image, size = "sm"
   return (
     <Button 
       variant="outline" 
-      size={size} 
+      size="default" 
       onClick={handleShare} 
       className="gap-2 bg-transparent hover:bg-secondary"
     >

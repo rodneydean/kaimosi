@@ -924,19 +924,3 @@ enum PropertyStatus {
   UNLISTED
   SOLD_OUT
 }
-
-// ============================================================
-// USER MODEL EXTENSIONS FOR APARTMENTS
-// ============================================================
-// Note: User model has been extended with the following relations:
-// - ApartmentFavorites
-// - ApartmentPreferences
-// 
-// USER MODEL EXTENSIONS FOR POD
-// ============================================================
-// Note: User model has been extended with the following relations:
-// - PodDesigns
-// - PodCarts
-// - PodOrders
-// - PodPayments
-// - PodPaymentTransactions

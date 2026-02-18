@@ -1,10 +1,12 @@
+import tsParser from '@typescript-eslint/parser';
+
 export default [
   {
     ignores: ['node_modules', 'dist', 'build', '.next', '.turbo'],
   },
   {
     languageOptions: {
-      parser: '@typescript-eslint/parser',
+      parser: tsParser,
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',

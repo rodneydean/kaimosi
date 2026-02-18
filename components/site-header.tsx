@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X, MapPin, Store, Utensils, Bed, Home, Calendar, BookOpen, Users, ArrowRight } from "lucide-react"
+import { Menu, X, MapPin, Store, Utensils, Bed, Home, Calendar, BookOpen, Users, ArrowRight, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -16,7 +16,15 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { cn } from "@/lib/utils"
 import { UserMenu } from "@/components/auth/user-menu"
 
-const navigation = [
+type NavigationItem = {
+  name: string
+  href: string
+  icon?: LucideIcon
+  description?: string
+  children?: NavigationItem[]
+}
+
+const navigation: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
   {
     name: "Discover",

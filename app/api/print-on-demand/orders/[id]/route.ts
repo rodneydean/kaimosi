@@ -16,10 +16,11 @@ const updateOrderSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const order = await PodOrderService.getOrderById(params.id)
+    const paramsValue = await params
+    const order = await PodOrderService.getOrderById(paramsValue.id)
 
     if (!order) {
       return NextResponse.json(
@@ -40,13 +41,15 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const updates = updateOrderSchema.parse(body)
 
-    const order = await PodOrderService.getOrderById(params.id)
+    const { id } = await params
+
+    const order = await PodOrderService.getOrderById(id)
 
     if (!order) {
       return NextResponse.json(
@@ -56,10 +59,9 @@ export async function PATCH(
     }
 
     // Update order status if provided
-    let updatedOrder = order
     if (updates.status) {
-      updatedOrder = await PodOrderService.updateOrderStatus(
-        params.id,
+      await PodOrderService.updateOrderStatus(
+        id,
         updates.status,
         updates.notes,
         updates.trackingNumber
@@ -67,24 +69,16 @@ export async function PATCH(
     } else if (updates.trackingNumber || updates.notes) {
       // Update tracking or notes without changing status
       const { prisma } = await import('@/shared/db/client')
-      updatedOrder = await prisma.podOrder.update({
-        where: { id: params.id },
+      await prisma.podOrder.update({
+        where: { id },
         data: {
           ...(updates.trackingNumber && { trackingNumber: updates.trackingNumber }),
           ...(updates.notes && { notes: updates.notes }),
         },
-        include: {
-          items: {
-            include: {
-              podProduct: true,
-              podDesign: true,
-            },
-          },
-          payment: true,
-          fulfillmentTimeline: true,
-        },
       })
     }
+
+    const updatedOrder = await PodOrderService.getOrderById(id)
 
     return NextResponse.json(updatedOrder, { status: 200 })
   } catch (error) {
@@ -92,7 +86,7 @@ export async function PATCH(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error },
         { status: 400 }
       )
     }
@@ -106,10 +100,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const order = await PodOrderService.getOrderById(params.id)
+    const { id } = await params
+    const order = await PodOrderService.getOrderById(id)
 
     if (!order) {
       return NextResponse.json(
@@ -126,7 +121,7 @@ export async function DELETE(
       )
     }
 
-    const deletedOrder = await PodOrderService.deleteOrder(params.id)
+    const deletedOrder = await PodOrderService.deleteOrder(id)
 
     return NextResponse.json(
       { message: 'Order deleted successfully', order: deletedOrder },

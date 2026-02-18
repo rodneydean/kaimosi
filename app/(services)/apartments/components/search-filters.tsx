@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Search, X, ChevronDown } from 'lucide-react'
-import type { PropertyFilters } from '@kaimosi/types'
+import { PropertyFilters } from '@/shared/types'
 
 interface SearchFiltersProps {
   onFiltersChange: (filters: PropertyFilters) => void

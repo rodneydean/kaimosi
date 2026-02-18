@@ -20,7 +20,7 @@ export class ApartmentPreferencesService {
       })
     }
 
-    return prefs
+    return this.mapToUserPreference(prefs)
   }
 
   /**
@@ -30,10 +30,12 @@ export class ApartmentPreferencesService {
     userId: string,
     updates: UpdatePreferencesRequest
   ): Promise<UserPreference> {
-    return prisma.userPreference.update({
+    const prefs = await prisma.userPreference.update({
       where: { userId },
       data: updates,
     })
+
+    return this.mapToUserPreference(prefs)
   }
 
   /**
@@ -42,12 +44,12 @@ export class ApartmentPreferencesService {
   static async addPreferredLocation(userId: string, locationId: string): Promise<UserPreference> {
     const prefs = await this.getOrCreatePreferences(userId)
     const locations = new Set(prefs.preferredLocations)
-    locations.add(locationId)
-
-    return prisma.userPreference.update({
+    const updated = await prisma.userPreference.update({
       where: { userId },
-      data: { preferredLocations: Array.from(locations) },
+      data: { preferredLocations: Array.from(locations) as string[] },
     })
+
+    return this.mapToUserPreference(updated)
   }
 
   /**
@@ -58,10 +60,12 @@ export class ApartmentPreferencesService {
     const locations = new Set(prefs.preferredLocations)
     locations.delete(locationId)
 
-    return prisma.userPreference.update({
+    const updated = await prisma.userPreference.update({
       where: { userId },
-      data: { preferredLocations: Array.from(locations) },
+      data: { preferredLocations: Array.from(locations) as string[] },
     })
+
+    return this.mapToUserPreference(updated)
   }
 
   /**
@@ -72,10 +76,12 @@ export class ApartmentPreferencesService {
     const amenities = new Set(prefs.preferredAmenities)
     amenities.add(amenityId)
 
-    return prisma.userPreference.update({
+    const updated = await prisma.userPreference.update({
       where: { userId },
-      data: { preferredAmenities: Array.from(amenities) },
+      data: { preferredAmenities: Array.from(amenities) as string[] },
     })
+
+    return this.mapToUserPreference(updated)
   }
 
   /**
@@ -244,5 +250,18 @@ export class ApartmentPreferencesService {
       where: { id: recommendationId },
       data: { viewed: true, viewedAt: new Date() },
     })
+  }
+
+  /**
+   * Helper to map Prisma result to UserPreference type
+   */
+  private static mapToUserPreference(prismaPrefs: any): UserPreference {
+    if (!prismaPrefs) return prismaPrefs
+    return {
+      ...prismaPrefs,
+      minPrice: prismaPrefs.minPrice ? Number(prismaPrefs.minPrice) : undefined,
+      maxPrice: prismaPrefs.maxPrice ? Number(prismaPrefs.maxPrice) : undefined,
+      propertyTypes: prismaPrefs.propertyTypes as any,
+    }
   }
 }

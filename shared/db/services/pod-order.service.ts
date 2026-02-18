@@ -1,5 +1,5 @@
 import { prisma } from '../client'
-import type { PodOrderStatus } from '@prisma/client'
+import type { PodOrderStatus, PodPaymentStatus } from '@prisma/client'
 
 /**
  * POD Order Service
@@ -176,7 +176,7 @@ export class PodOrderService {
   /**
    * Update payment status on order
    */
-  static async updatePaymentStatus(orderId: string, paymentStatus: string) {
+  static async updatePaymentStatus(orderId: string, paymentStatus: PodPaymentStatus) {
     let orderStatus: PodOrderStatus = 'PENDING'
     if (paymentStatus === 'COMPLETED') {
       orderStatus = 'PAID'

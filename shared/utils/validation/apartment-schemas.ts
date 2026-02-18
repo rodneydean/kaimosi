@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { PropertyType, ListingType, PropertyStatus } from '@kaimosi/types'
 
 // Enums
 const PropertyTypeEnum = z.enum(['APARTMENT', 'HOUSE', 'VILLA', 'COMMERCIAL', 'LAND', 'STUDIO'])

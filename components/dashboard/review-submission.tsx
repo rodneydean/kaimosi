@@ -100,34 +100,34 @@ export function ReviewSubmission({ submissionId }: { submissionId: string }) {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 text-sm sm:grid-cols-2">
-              {submission.data.description && (
+              {(submission.data as any).description && (
                 <div className="sm:col-span-2">
                   <p className="font-medium text-muted-foreground">Description</p>
-                  <p className="mt-1">{submission.data.description as string}</p>
+                  <p className="mt-1">{(submission.data as any).description as string}</p>
                 </div>
               )}
-              {submission.data.address && (
+              {(submission.data as any).address && (
                 <div>
                   <p className="font-medium text-muted-foreground">Address</p>
-                  <p className="mt-1">{submission.data.address as string}</p>
+                  <p className="mt-1">{(submission.data as any).address as string}</p>
                 </div>
               )}
-              {submission.data.phone && (
+              {(submission.data as any).phone && (
                 <div>
                   <p className="font-medium text-muted-foreground">Phone</p>
-                  <p className="mt-1">{submission.data.phone as string}</p>
+                  <p className="mt-1">{(submission.data as any).phone as string}</p>
                 </div>
               )}
-              {submission.data.hours && (
+              {(submission.data as any).hours && (
                 <div>
                   <p className="font-medium text-muted-foreground">Hours</p>
-                  <p className="mt-1">{submission.data.hours as string}</p>
+                  <p className="mt-1">{(submission.data as any).hours as string}</p>
                 </div>
               )}
-              {submission.data.priceRange && (
+              {(submission.data as any).priceRange && (
                 <div>
                   <p className="font-medium text-muted-foreground">Price Range</p>
-                  <p className="mt-1">{submission.data.priceRange as string}</p>
+                  <p className="mt-1">{(submission.data as any).priceRange as string}</p>
                 </div>
               )}
             </div>

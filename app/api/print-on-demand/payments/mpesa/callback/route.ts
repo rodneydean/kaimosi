@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       const payment = await PodPaymentService.updatePaymentStatus(
         transaction.podPaymentId,
         'COMPLETED',
-        callbackResult.mpesaReceiptNumber,
+        callbackResult.mpesaReceiptNumber?.toString() || '',
         undefined
       )
 
