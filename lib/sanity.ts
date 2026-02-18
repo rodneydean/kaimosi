@@ -1,4 +1,3 @@
-import { createImageUrlBuilder, SanityImageSource } from "@sanity/image-url"
 import { createClient } from "next-sanity"
 
 export const sanityClient = createClient({
@@ -10,12 +9,6 @@ export const sanityClient = createClient({
 })
 
 export const client = sanityClient
-
-const builder = createImageUrlBuilder(sanityClient);
-
-export function urlFor(source: SanityImageSource) {
-  return builder.image(source)
-}
 
 // GROQ Queries for marketplace
 export const QUERIES = {

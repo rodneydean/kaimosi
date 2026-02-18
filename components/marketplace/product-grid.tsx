@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Star } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { urlFor } from "@/lib/sanity"
 import { calculateDiscount } from "@/lib/actions/marketplace"
-import { useState } from "react"
+import { use, useState } from "react"
 import { addToCart } from "@/lib/actions/marketplace"
 import { toast } from "sonner"
+import { urlFor } from "@/sanity/lib/image"
 
 export function ProductGrid({ products }: { products: any[] }) {
   if (products.length === 0) {
@@ -38,8 +38,8 @@ function ProductCard({ product }: { product: any }) {
 
   const hasDiscount = product.discount?.isActive
   const originalPrice = product.price
-  const discountedPrice = calculateDiscount(originalPrice, product.discount)
-  const discountPercentage = hasDiscount ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0
+  const discountedPrice = use(calculateDiscount(originalPrice, product.discount))
+  const discountPercentage = hasDiscount ? Math.round(((originalPrice - Number(discountedPrice)) / originalPrice) * 100) : 0
 
   const handleAddToCart = async () => {
     setIsAdding(true)
@@ -49,7 +49,7 @@ function ProductCard({ product }: { product: any }) {
     if (result.success) {
       toast.success("Added to cart!")
     } else {
-      toast.error(result.error || "Failed to add to cart")
+      toast.error("Failed to add to cart")
     }
   }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { use, useState } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,11 +8,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw, Star } from "lucide-react"
-import { urlFor } from "@/lib/sanity"
 import { calculateDiscount, addToCart } from "@/lib/actions/marketplace"
 import { toast } from "sonner"
 import { PortableText } from "@portabletext/react"
 import { ShareButton } from "@/components/share/share-button"
+import { urlFor } from "@/sanity/lib/image"
 
 export function ProductDetail({ product }: { product: any }) {
   const [selectedImage, setSelectedImage] = useState(0)
@@ -22,7 +22,7 @@ export function ProductDetail({ product }: { product: any }) {
   const images = product.images || []
   const hasDiscount = product.discount?.isActive
   const originalPrice = product.price
-  const discountedPrice = calculateDiscount(originalPrice, product.discount)
+  const discountedPrice = use(calculateDiscount(originalPrice, product.discount))
 
   const handleAddToCart = async () => {
     setIsAdding(true)
@@ -32,7 +32,7 @@ export function ProductDetail({ product }: { product: any }) {
     if (result.success) {
       toast.success(`Added ${quantity} item(s) to cart!`)
     } else {
-      toast.error(result.error || "Failed to add to cart")
+      toast.error("Failed to add to cart")
     }
   }
 
