@@ -1,0 +1,19 @@
+{
+  "name": "@kaimosi/db",
+  "version": "1.0.0",
+  "description": "Database client and services",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./client.ts",
+    "./services": "./services/index.ts",
+    "./services/pod-payment": "./services/pod-payment.service.ts",
+    "./services/pod-order": "./services/pod-order.service.ts",
+    "./services/pod-cart": "./services/pod-cart.service.ts",
+    "./services/pod-design": "./services/pod-design.service.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@prisma/client": "^5.0.0"
+  }
+}

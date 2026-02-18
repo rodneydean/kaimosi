@@ -96,7 +96,7 @@ export async function removeFromCart(cartItemId: string) {
 }
 
 // Calculate discounted price
-export function calculateDiscount(price: number, discount?: any) {
+export async function calculateDiscount(price: number, discount?: any) {
   if (!discount || !discount.isActive) return price
 
   if (discount.discountType === "percentage") {

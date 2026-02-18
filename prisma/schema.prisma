@@ -19,12 +19,19 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  // Relations
+  // Relations - Marketplace
   accounts      Account[]
   sessions      Session[]
   orders        Order[]
   reviews       Review[]
   cartItems     CartItem[]
+
+  // Relations - Print-on-Demand
+  podDesigns    PodDesign[] @relation("PodDesigns")
+  podCarts      PodCart? @relation("PodCarts")
+  podOrders     PodOrder[] @relation("PodOrders")
+  podPayments   PodPayment[] @relation("PodPayments")
+  podPaymentTransactions PodPaymentTransaction[] @relation("PodPaymentTransactions")
 
   @@map("users")
 }
@@ -234,3 +241,320 @@ model Review {
   @@index([rating])
   @@map("reviews")
 }
+
+// ============================================================
+// PRINT-ON-DEMAND SERVICE MODELS
+// ============================================================
+
+// POD Design Model
+model PodDesign {
+  id                    String     @id @default(cuid())
+  userId                String     @map("user_id")
+  name                  String
+  thumbnail             String?
+  description           String?    @db.Text
+  productType           String     // "tshirt", "mug", "poster", etc.
+  isPublished           Boolean    @default(false)
+  isTemplate            Boolean    @default(false)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  deletedAt             DateTime?  @map("deleted_at")
+
+  // Relations
+  user                  User       @relation("PodDesigns", fields: [userId], references: [id], onDelete: Cascade)
+  versions              PodDesignVersion[]
+  podCartItems          PodCartItem[]
+  podOrderItems         PodOrderItem[]
+
+  @@index([userId])
+  @@index([productType])
+  @@index([isPublished])
+  @@index([deletedAt])
+  @@map("pod_designs")
+}
+
+// POD Design Version Model - for version control
+model PodDesignVersion {
+  id                    String     @id @default(cuid())
+  podDesignId           String     @map("pod_design_id")
+  versionNumber         Int
+  designData            Json       // Complete design canvas state
+  label                 String?    // e.g., "Final", "Draft", "Client Review"
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  podDesign             PodDesign  @relation(fields: [podDesignId], references: [id], onDelete: Cascade)
+
+  @@unique([podDesignId, versionNumber])
+  @@index([podDesignId])
+  @@map("pod_design_versions")
+}
+
+// POD Product Model
+model PodProduct {
+  id                    String     @id @default(cuid())
+  name                  String
+  category              String     // "apparel", "drinkware", "home", "accessories"
+  sku                   String     @unique
+  description           String?    @db.Text
+  basePrice             Decimal    @db.Decimal(10, 2)
+  image                 String?
+  dimensions            Json?      // { width, height, depth, unit }
+  materials             String[]   @default([])
+  colors                String[]   @default([])
+  sizes                 String[]   @default([])
+  printAreas            Json?      // Printable areas with dimensions
+  isActive              Boolean    @default(true)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  podCartItems          PodCartItem[]
+  podOrderItems         PodOrderItem[]
+  templates             PodTemplate[]
+
+  @@index([category])
+  @@index([sku])
+  @@index([isActive])
+  @@map("pod_products")
+}
+
+// POD Template Model
+model PodTemplate {
+  id                    String     @id @default(cuid())
+  name                  String
+  description           String?    @db.Text
+  podProductId          String     @map("pod_product_id")
+  category              String
+  thumbnail             String?
+  previewImage          String?
+  designData            Json       // Template design structure
+  tags                  String[]   @default([])
+  isActive              Boolean    @default(true)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  podProduct            PodProduct @relation(fields: [podProductId], references: [id], onDelete: Cascade)
+
+  @@index([podProductId])
+  @@index([category])
+  @@index([isActive])
+  @@map("pod_templates")
+}
+
+// POD Cart Model
+model PodCart {
+  id                    String     @id @default(cuid())
+  userId                String     @unique @map("user_id")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user                  User       @relation("PodCarts", fields: [userId], references: [id], onDelete: Cascade)
+  items                 PodCartItem[]
+
+  @@map("pod_carts")
+}
+
+// POD Cart Item Model
+model PodCartItem {
+  id                    String     @id @default(cuid())
+  podCartId             String     @map("pod_cart_id")
+  podProductId          String     @map("pod_product_id")
+  podDesignId           String     @map("pod_design_id")
+  quantity              Int        @default(1)
+  size                  String?
+  color                 String?
+  customOptions         Json?      // Additional customization like text, placement
+  price                 Decimal    @db.Decimal(10, 2) // Price at time of adding
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  podCart               PodCart    @relation(fields: [podCartId], references: [id], onDelete: Cascade)
+  podProduct            PodProduct @relation(fields: [podProductId], references: [id])
+  podDesign             PodDesign  @relation(fields: [podDesignId], references: [id])
+
+  @@index([podCartId])
+  @@index([podProductId])
+  @@index([podDesignId])
+  @@map("pod_cart_items")
+}
+
+// POD Order Model
+model PodOrder {
+  id                    String     @id @default(cuid())
+  userId                String     @map("user_id")
+  orderNumber           String     @unique @map("order_number")
+  status                PodOrderStatus @default(PENDING)
+  paymentStatus         PodPaymentStatus @default(UNPAID)
+  subtotal              Decimal    @db.Decimal(10, 2)
+  tax                   Decimal    @db.Decimal(10, 2) @default(0)
+  shippingCost          Decimal    @db.Decimal(10, 2)
+  totalAmount           Decimal    @db.Decimal(10, 2)
+  shippingMethod        String     // "standard", "express", "overnight"
+  shippingAddress       String?    @db.Text
+  trackingNumber        String?    @map("tracking_number")
+  notes                 String?    @db.Text
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  deletedAt             DateTime?  @map("deleted_at")
+
+  // Relations
+  user                  User       @relation("PodOrders", fields: [userId], references: [id], onDelete: Cascade)
+  items                 PodOrderItem[]
+  payment               PodPayment?
+  fulfillmentTimeline   PodFulfillmentTimeline[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([orderNumber])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("pod_orders")
+}
+
+// POD Order Item Model
+model PodOrderItem {
+  id                    String     @id @default(cuid())
+  podOrderId            String     @map("pod_order_id")
+  podProductId          String     @map("pod_product_id")
+  podDesignId           String     @map("pod_design_id")
+  quantity              Int
+  size                  String?
+  color                 String?
+  customOptions         Json?
+  unitPrice             Decimal    @db.Decimal(10, 2)
+  totalPrice            Decimal    @db.Decimal(10, 2)
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  podOrder              PodOrder   @relation(fields: [podOrderId], references: [id], onDelete: Cascade)
+  podProduct            PodProduct @relation(fields: [podProductId], references: [id])
+  podDesign             PodDesign  @relation(fields: [podDesignId], references: [id])
+
+  @@index([podOrderId])
+  @@index([podProductId])
+  @@index([podDesignId])
+  @@map("pod_order_items")
+}
+
+// POD Payment Model - M-Pesa Integration
+model PodPayment {
+  id                    String     @id @default(cuid())
+  podOrderId            String     @unique @map("pod_order_id")
+  userId                String     @map("user_id")
+  amount                Decimal    @db.Decimal(10, 2)
+  currency              String     @default("KES")
+  method                String     @default("mpesa") // payment method
+  status                PodPaymentStatus @default(UNPAID)
+  mpesaReceiptNumber    String?    @unique @map("mpesa_receipt_number") // M-Pesa receipt/confirmation code
+  mpesaPhoneNumber      String?    @map("mpesa_phone_number") // Phone number used for M-Pesa
+  failureReason         String?    @map("failure_reason")
+  retryCount            Int        @default(0) @map("retry_count")
+  lastRetryAt           DateTime?  @map("last_retry_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  podOrder              PodOrder   @relation(fields: [podOrderId], references: [id], onDelete: Cascade)
+  user                  User       @relation("PodPayments", fields: [userId], references: [id], onDelete: Cascade)
+  transactions          PodPaymentTransaction[]
+
+  @@index([podOrderId])
+  @@index([userId])
+  @@index([status])
+  @@index([mpesaReceiptNumber])
+  @@index([createdAt])
+  @@map("pod_payments")
+}
+
+// POD Payment Transaction Model - for M-Pesa transaction logs
+model PodPaymentTransaction {
+  id                    String     @id @default(cuid())
+  podPaymentId          String     @map("pod_payment_id")
+  userId                String     @map("user_id")
+  transactionId         String?    @unique @map("transaction_id") // M-Pesa CheckoutRequestID or similar
+  phone                 String
+  amount                Decimal    @db.Decimal(10, 2)
+  status                PodTransactionStatus @default(INITIATED)
+  mpesaResponseCode     String?    @map("mpesa_response_code") // M-Pesa response code
+  mpesaResponseDesc     String?    @map("mpesa_response_desc") // M-Pesa response description
+  callbackData          Json?      @map("callback_data") // Raw M-Pesa callback data
+  initiatedAt           DateTime   @default(now()) @map("initiated_at")
+  completedAt           DateTime?  @map("completed_at")
+
+  // Relations
+  podPayment            PodPayment @relation(fields: [podPaymentId], references: [id], onDelete: Cascade)
+  user                  User       @relation("PodPaymentTransactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([podPaymentId])
+  @@index([userId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([phone])
+  @@index([initiatedAt])
+  @@map("pod_payment_transactions")
+}
+
+// POD Fulfillment Timeline Model - track order status changes
+model PodFulfillmentTimeline {
+  id                    String     @id @default(cuid())
+  podOrderId            String     @map("pod_order_id")
+  status                PodOrderStatus
+  message               String?    @db.Text
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  podOrder              PodOrder   @relation(fields: [podOrderId], references: [id], onDelete: Cascade)
+
+  @@index([podOrderId])
+  @@index([status])
+  @@map("pod_fulfillment_timelines")
+}
+
+// ============================================================
+// POD ENUMS
+// ============================================================
+
+enum PodOrderStatus {
+  PENDING          // Order created, awaiting payment
+  PAID             // Payment confirmed
+  PROCESSING       // Order received, preparing for production
+  PRODUCTION       // Item is being produced
+  QUALITY_CHECK    // Quality verification
+  SHIPPING         // In transit to customer
+  DELIVERED        // Delivered to customer
+  CANCELLED        // Order cancelled
+  REFUNDED         // Payment refunded
+}
+
+enum PodPaymentStatus {
+  UNPAID           // Payment pending
+  PENDING          // Payment initiated, awaiting confirmation
+  COMPLETED        // Payment successful
+  FAILED           // Payment failed
+  CANCELLED        // Payment cancelled
+  REFUNDED         // Payment refunded
+}
+
+enum PodTransactionStatus {
+  INITIATED        // M-Pesa STK pushed, awaiting user input
+  PROCESSING       // Payment being processed
+  COMPLETED        // Transaction successful
+  FAILED           // Transaction failed
+  TIMEOUT          // Request timeout
+  CANCELLED        // User cancelled
+}
+
+// ============================================================
+// USER MODEL EXTENSIONS FOR POD
+// ============================================================
+// Note: User model has been extended with the following relations:
+// - PodDesigns
+// - PodCarts
+// - PodOrders
+// - PodPayments
+// - PodPaymentTransactions
