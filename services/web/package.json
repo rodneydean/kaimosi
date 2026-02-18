@@ -12,14 +12,15 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@kaimosi/ui": "workspace:*",
     "@kaimosi/utils": "workspace:*",
     "@kaimosi/types": "workspace:*",
-    "@kaimosi/auth": "workspace:*",
+    "@kaimosi/hooks": "workspace:*",
     "@kaimosi/db": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@prisma/client": "^5.0.0",
+    "zustand": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^22",

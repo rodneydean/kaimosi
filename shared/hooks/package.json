@@ -1,0 +1,22 @@
+{
+  "name": "@kaimosi/hooks",
+  "version": "1.0.0",
+  "description": "Shared React hooks",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./use-fetch": "./use-fetch.ts",
+    "./use-mutation": "./use-mutation.ts",
+    "./use-debounce": "./use-debounce.ts",
+    "./use-local-storage": "./use-local-storage.ts",
+    "./use-auth": "./use-auth.ts",
+    "./use-design-store": "./use-design-store.ts",
+    "./use-cart-store": "./use-cart-store.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "react": "^19.0.0",
+    "zustand": "^4.0.0"
+  }
+}
