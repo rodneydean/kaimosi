@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
             backgroundColor,
             color: textColor,
           }}
-      >
+        >
         <div
           style={{
             display: "flex",
