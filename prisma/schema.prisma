@@ -26,6 +26,10 @@ model User {
   reviews       Review[]
   cartItems     CartItem[]
 
+  // Relations - Apartments
+  apartmentFavorites UserFavorite[] @relation("ApartmentFavorites")
+  apartmentPreferences UserPreference? @relation("ApartmentPreferences")
+
   // Relations - Print-on-Demand
   podDesigns    PodDesign[] @relation("PodDesigns")
   podCarts      PodCart? @relation("PodCarts")
@@ -550,6 +554,385 @@ enum PodTransactionStatus {
 }
 
 // ============================================================
+// APARTMENT/REAL ESTATE SERVICE MODELS
+// ============================================================
+
+// Location hierarchy model
+model Location {
+  id                    String     @id @default(cuid())
+  country               String
+  city                  String
+  district              String
+  subArea               String?
+  latitude              Float?
+  longitude             Float?
+  slug                  String     @unique
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  properties            Property[]
+
+  @@unique([country, city, district, subArea])
+  @@index([city])
+  @@index([district])
+  @@map("locations")
+}
+
+// Main property listing model
+model Property {
+  id                    String     @id @default(cuid())
+  title                 String
+  description           String?    @db.Text
+  type                  PropertyType // "apartment", "house", "villa", "commercial"
+  subType               String?    // "studio", "1-bed", "2-bed", etc.
+  listingType           ListingType @default(FOR_RENT) // "for_rent", "for_sale"
+  status                PropertyStatus @default(AVAILABLE)
+  
+  // Pricing
+  price                 Decimal    @db.Decimal(12, 2)
+  priceUnit             String     @default("KES") // Currency
+  pricePerUnit          String     @default("month") // "month", "year", "total"
+  
+  // Property Details
+  bedrooms              Int
+  bathrooms             Int
+  areaSize              Float?     // in square meters
+  furnishingType        String?    // "furnished", "unfurnished", "semi-furnished"
+  yearBuilt             Int?
+  floorNumber           Int?
+  totalFloors           Int?
+  
+  // Location
+  locationId            String     @map("location_id")
+  streetAddress         String?
+  coordinates           Json?      // { lat, lng }
+  
+  // Media
+  featuredImageUrl      String?
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  publishedAt           DateTime?  @map("published_at")
+  deletedAt             DateTime?  @map("deleted_at")
+  
+  // Relations
+  location              Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  images                PropertyImage[]
+  floorPlans            FloorPlan[]
+  amenities             PropertyAmenity[] @relation("PropertyAmenities")
+  userFavorites         UserFavorite[]
+  shares                PropertyShare[]
+  views                 PropertyView[]
+  priceHistory          PriceHistory[]
+  analytics             PropertyAnalytics?
+  complexProperties     ComplexProperty[]
+
+  @@index([locationId])
+  @@index([type])
+  @@index([listingType])
+  @@index([status])
+  @@index([price])
+  @@index([bedrooms])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([deletedAt])
+  @@map("properties")
+}
+
+// Property images for carousel gallery
+model PropertyImage {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  url                   String
+  thumbnailUrl          String?
+  caption               String?
+  displayOrder          Int        @default(0)
+  imageType             String     @default("photo") // "photo", "floorplan"
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([displayOrder])
+  @@map("property_images")
+}
+
+// Floor plans with dimensions
+model FloorPlan {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  name                  String?    // e.g., "Master Bedroom", "Living Area"
+  imageUrl              String
+  dimensions            Json?      // { width, height, unit }
+  areaSize              Float?     // in square meters
+  description           String?    @db.Text
+  displayOrder          Int        @default(0)
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@map("floor_plans")
+}
+
+// Amenities lookup table
+model Amenity {
+  id                    String     @id @default(cuid())
+  name                  String     @unique
+  category              String     // "facility", "feature", "service"
+  icon                  String?
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  propertyAmenities     PropertyAmenity[]
+
+  @@index([category])
+  @@map("amenities")
+}
+
+// Junction table for property amenities
+model PropertyAmenity {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  amenityId             String     @map("amenity_id")
+  
+  // Relations
+  property              Property   @relation("PropertyAmenities", fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity               Amenity    @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityId])
+  @@index([propertyId])
+  @@index([amenityId])
+  @@map("property_amenities")
+}
+
+// Complex/Building grouping
+model PropertyComplex {
+  id                    String     @id @default(cuid())
+  name                  String
+  description           String?    @db.Text
+  locationId            String     @map("location_id")
+  totalUnits           Int?
+  imageUrl              String?
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  location              Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  properties            ComplexProperty[]
+
+  @@index([locationId])
+  @@map("property_complexes")
+}
+
+// Junction for properties in complexes
+model ComplexProperty {
+  id                    String     @id @default(cuid())
+  complexId             String     @map("complex_id")
+  propertyId            String     @map("property_id")
+  unitNumber            String?
+  
+  // Relations
+  complex               PropertyComplex @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([complexId, propertyId])
+  @@index([complexId])
+  @@index([propertyId])
+  @@map("complex_properties")
+}
+
+// User favorites/wishlist
+model UserFavorite {
+  id                    String     @id @default(cuid())
+  userId                String     @map("user_id")
+  propertyId            String     @map("property_id")
+  listName              String     @default("Favorites")
+  notes                 String?    @db.Text
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  user                  User       @relation("ApartmentFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+  @@map("user_favorites")
+}
+
+// User preferences for personalization
+model UserPreference {
+  id                    String     @id @default(cuid())
+  userId                String     @unique @map("user_id")
+  minPrice              Decimal?   @db.Decimal(12, 2)
+  maxPrice              Decimal?   @db.Decimal(12, 2)
+  preferredLocations    String[]   @default([])
+  bedrooms              Int[]      @default([])
+  bathrooms            Int[]      @default([])
+  propertyTypes        String[]   @default([])
+  preferredAmenities    String[]   @default([])
+  petFriendly          Boolean    @default(false)
+  furnished            Boolean?
+  leaseType            String?    // "long-term", "short-term"
+  moveInDate           DateTime?
+  notificationsEnabled Boolean    @default(true)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user                  User       @relation("ApartmentPreferences", fields: [userId], references: [id], onDelete: Cascade)
+  searchHistory         SearchQuery[]
+  recommendations       Recommendation[]
+
+  @@map("user_preferences")
+}
+
+// Search history for ML recommendations
+model SearchQuery {
+  id                    String     @id @default(cuid())
+  userPreferenceId      String     @map("user_preference_id")
+  query                 String?
+  filters               Json?
+  resultsCount          Int?
+  selectedPropertyId    String?    // Property clicked after search
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  userPreference        UserPreference @relation(fields: [userPreferenceId], references: [id], onDelete: Cascade)
+
+  @@index([userPreferenceId])
+  @@index([createdAt])
+  @@map("search_queries")
+}
+
+// ML-based recommendations
+model Recommendation {
+  id                    String     @id @default(cuid())
+  userPreferenceId      String     @map("user_preference_id")
+  propertyId            String     @map("property_id")
+  score                 Float      // 0-100 confidence score
+  reason                String?    // Why recommended
+  viewed                Boolean    @default(false)
+  viewedAt              DateTime?  @map("viewed_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  expiresAt             DateTime   @map("expires_at") // 30 days from creation
+
+  // Relations
+  userPreference        UserPreference @relation(fields: [userPreferenceId], references: [id], onDelete: Cascade)
+
+  @@index([userPreferenceId])
+  @@index([propertyId])
+  @@index([score])
+  @@index([expiresAt])
+  @@map("recommendations")
+}
+
+// Property views for analytics
+model PropertyView {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  userId                String?    @map("user_id")
+  sessionId             String?    @map("session_id")
+  source                String?    // "search", "recommendation", "direct"
+  viewedAt              DateTime   @default(now()) @map("viewed_at")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([viewedAt])
+  @@map("property_views")
+}
+
+// Price history for trending
+model PriceHistory {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  price                 Decimal    @db.Decimal(12, 2)
+  changeReason          String?    // "initial", "reduction", "increase"
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([createdAt])
+  @@map("price_history")
+}
+
+// Social shares tracking
+model PropertyShare {
+  id                    String     @id @default(cuid())
+  propertyId            String     @map("property_id")
+  userId                String?    @map("user_id")
+  platform              String     // "whatsapp", "facebook", "twitter", "email", "link"
+  shareToken            String     @unique
+  clicks                Int        @default(0)
+  feedback              String?    @db.Text
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([shareToken])
+  @@index([createdAt])
+  @@map("property_shares")
+}
+
+// Analytics aggregation
+model PropertyAnalytics {
+  id                    String     @id @default(cuid())
+  propertyId            String     @unique @map("property_id")
+  totalViews            Int        @default(0)
+  totalFavorites        Int        @default(0)
+  totalShares           Int        @default(0)
+  totalShareClicks      Int        @default(0)
+  contactRequests       Int        @default(0)
+  avgTimeOnPage         Int?       // in seconds
+  lastUpdated           DateTime   @updatedAt @map("last_updated")
+
+  // Relations
+  property              Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_analytics")
+}
+
+// ============================================================
+// APARTMENT ENUMS
+// ============================================================
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  VILLA
+  COMMERCIAL
+  LAND
+  STUDIO
+}
+
+enum ListingType {
+  FOR_RENT
+  FOR_SALE
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RENTED
+  SOLD
+  UNLISTED
+  SOLD_OUT
+}
+
+// ============================================================
+// USER MODEL EXTENSIONS FOR APARTMENTS
+// ============================================================
+// Note: User model has been extended with the following relations:
+// - ApartmentFavorites
+// - ApartmentPreferences
+// 
 // USER MODEL EXTENSIONS FOR POD
 // ============================================================
 // Note: User model has been extended with the following relations:
