@@ -1,4 +1,3 @@
-// Prisma schema for marketplace with PostgreSQL + BetterAuth
 generator client {
   provider = "prisma-client-js"
 }
@@ -177,7 +176,6 @@ model Order {
   orderNumber   String      @unique @map("order_number")
   status        OrderStatus @default(PENDING)
   subtotal      Decimal     @db.Decimal(10, 2)
-  discount      Decimal     @default(0) @db.Decimal(10, 2)
   shipping      Decimal     @default(0) @db.Decimal(10, 2)
   tax           Decimal     @default(0) @db.Decimal(10, 2)
   total         Decimal     @db.Decimal(10, 2)
@@ -571,6 +569,7 @@ model Location {
 
   // Relations
   properties            Property[]
+  complexes             PropertyComplex[]
 
   @@unique([country, city, district, subArea])
   @@index([city])

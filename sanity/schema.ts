@@ -4,9 +4,9 @@ import type { SchemaTypeDefinition } from "sanity"
 import attraction from "./schemas/documents/attraction"
 import attractionCategory from "./schemas/documents/attractionCategory"
 import amenity from "./schemas/documents/amenity"
-import event from "./schemas/documents/event"
-import restaurant from "./schemas/documents/restaurant"
-import accommodation from "./schemas/documents/accommodation"
+// import event from "./schemas/documents/event"
+// import restaurant from "./schemas/documents/restaurant"
+// import accommodation from "./schemas/documents/accommodation"
 
 // Object Types
 import location from "./schemas/objects/location"
@@ -21,9 +21,9 @@ export const schema: { types: SchemaTypeDefinition[] } = {
     attraction,
     attractionCategory,
     amenity,
-    event,
-    restaurant,
-    accommodation,
+    // event,
+    // restaurant,
+    // accommodation,
 
     // Object types (reusable)
     location,

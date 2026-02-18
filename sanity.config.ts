@@ -1,9 +1,9 @@
 import { defineConfig } from "sanity"
 import { structureTool } from "sanity/structure"
 import { visionTool } from "@sanity/vision"
-import { projectId, dataset, apiVersion } from "./env"
-import { schema } from "./schema"
-import { deskStructure } from "./desk"
+import { projectId, dataset, apiVersion } from "@/sanity/env"
+import { schema } from "@/sanity/schema"
+import { deskStructure } from "@/sanity/desk"
 
 export default defineConfig({
   basePath: "/studio",

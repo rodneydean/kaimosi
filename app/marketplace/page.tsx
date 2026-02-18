@@ -16,10 +16,11 @@ export const metadata = {
 export default async function MarketplacePage({
   searchParams,
 }: {
-  searchParams: { category?: string; search?: string }
+  searchParams: Promise<{ category?: string; search?: string }>
 }) {
+  const { category, search } = await searchParams
   const [productsResult, categoriesResult, discountsResult] = await Promise.all([
-    getProducts({ category: searchParams.category, search: searchParams.search }),
+    getProducts({ category: category, search: search }),
     getCategories(),
     getActiveDiscounts(),
   ])
